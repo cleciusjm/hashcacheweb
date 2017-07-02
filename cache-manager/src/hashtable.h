@@ -12,7 +12,7 @@ typedef struct hashTable
     int size;
 } HashTable;
 
-HashTable *hTableinit(int size);
+HashTable *hTableInit(const int size);
 /**
     Busca o valor da chave solicitada
 
@@ -21,7 +21,7 @@ HashTable *hTableinit(int size);
         key - chave da tabela
     @returns 1 se remoção ok, 0 se não ok
 **/
-ValueEntry *hTableSearch(HashTable *table, char *key);
+ValueEntry *hTableSearch(HashTable *table, const char *key);
 /**
     Insere o valor na tabela
 
@@ -39,8 +39,8 @@ int hTableInsert(HashTable *table, ValueEntry *value);
         key - chave da tabela
     @returns 1 se remoção ok, 0 se não ok
 **/
-int hTableRemove(HashTable *table, char *key);
+int hTableRemove(HashTable *table, const char *key);
 
-void hTableSave(HashTable *table, char *filename);
+void hTableSave(HashTable *table, const char *filename);
 
-HashTable *hTableLoad(char *filename);
+HashTable *hTableLoad(const char *filename);

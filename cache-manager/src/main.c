@@ -4,28 +4,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define OP_INSERT 0xA
+#define OP_SEARCH 0xB
+#define OP_REMOVE 0xC
+#define ERR_NONE_SELECTED 0x1
+#define ERR_MISS_PARAM 0x2
+#define TABLE_SIZE 101 // nr primo
+
+typedef struct argparse_option ArgsOpts;
+typedef struct argparse Args;
 
 static const char *const usage[] = {
     "cache-manager [options]",
     NULL,
 };
-static const unsigned int ERR_NONE_SELECTED = 0x1;
 
-static const unsigned int OP_INSERT = 0xA;
-static const unsigned int OP_SEARCH = 0xB;
-static const unsigned int OP_REMOVE = 0xC;
-static const unsigned int TABLE_SIZE = 101; // nr primo
-typedef struct argparse_option ArgsOpts;
-typedef struct argparse Args;
 /*Globals*/
 int verbose = 0;
+HashTable *table;
+FILE *db;
 
-int parseOperation(int insert, int remove, int search);
-
-void onNoneSelected();
 void onInsertSelected(const char *key);
 void onRemoveSelected(const char *key);
 void onSearchSelected(const char *key);
+void onNoneSelected();
+
+void loadIndex(const char *indexPath);
+void storeIndex(const char *indexPath);
+void loadDb(const char *storePath);
+
+int parseOperation(int insert, int remove, int search);
 
 int main(int argc, const char **argv)
 {
@@ -35,15 +43,15 @@ int main(int argc, const char **argv)
     int operation = 0;
 
     const char *key = NULL;
-    const char *idxFile = NULL;
-    const char *storeFile = NULL;
+    const char *indexPath = NULL;
+    const char *storePath = NULL;
 
     ArgsOpts options[] = {
         OPT_HELP(),
         OPT_GROUP("Opções básicas"),
         OPT_BOOLEAN('v', "verbose", &verbose, "Modo verboso"),
-        OPT_STRING('t', "index", &idxFile, "Arquivo de indice"),
-        OPT_STRING('d', "db", &storeFile, "Arquivo de armazenamento"),
+        OPT_STRING('t', "table", &indexPath, "Arquivo de indice"),
+        OPT_STRING('d', "db", &storePath, "Arquivo de armazenamento"),
         OPT_STRING('k', "key", &key, "Chave de indexação"),
         OPT_BOOLEAN('i', "insert", &insert, "Operação de inserção"),
         OPT_BOOLEAN('r', "remove", &remove, "Operação de remoção"),
@@ -56,6 +64,31 @@ int main(int argc, const char **argv)
     argc = argparse_parse(&argparse, argc, argv);
 
     operation = parseOperation(insert, remove, search);
+
+    /*Validação de parâmetros obrigatorios*/
+    int hasParams = 1;
+    if (key == NULL)
+    {
+        printf("Parametro de chave é obrigatório, use -k ou --key\n");
+        hasParams = 0;
+    }
+
+    if (indexPath == NULL)
+    {
+        printf("Parametro de arquivo da tabela é obrigatório, use -t ou --table\n");
+        hasParams = 0;
+    }
+
+    if (storePath == NULL)
+    {
+        printf("Parametro de arquivo de armazenamento é obrigatório, use -d ou --db\n");
+        hasParams = 0;
+    }
+    if (!hasParams)
+        return ERR_MISS_PARAM;
+
+    loadIndex(indexPath);
+    loadDb(storePath);
 
     switch (operation)
     {
@@ -72,8 +105,10 @@ int main(int argc, const char **argv)
         onNoneSelected();
         return ERR_NONE_SELECTED;
     }
+    storeIndex(indexPath);
     return 0;
 }
+
 void onInsertSelected(const char *key)
 {
     if (verbose)
@@ -119,7 +154,23 @@ int parseOperation(int insert, int remove, int search)
     }
     return 0;
 }
-
+void loadIndex(const char *indexPath)
+{
+    if (indexPath != NULL)
+    {
+        table = hTableLoad(indexPath);
+    }
+    if (table == NULL)
+    {
+        table = hTableInit(TABLE_SIZE);
+    }
+}
+void storeIndex(const char *indexPath)
+{
+}
+void loadDb(const char *storePath)
+{
+}
 char *str2md5(const char *str)
 {
     int length = strlen(str);
