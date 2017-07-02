@@ -9,20 +9,31 @@ static const char *const usage[] = {
     "cache-manager [options]",
     NULL,
 };
-static const int OP_INSERT = 0xA;
-static const int OP_SEARCH = 0xB;
-static const int OP_REMOVE = 0xC;
-static const int TABLE_SIZE = 101; // nr primo
+static const unsigned int ERR_NONE_SELECTED = 0x1;
+
+static const unsigned int OP_INSERT = 0xA;
+static const unsigned int OP_SEARCH = 0xB;
+static const unsigned int OP_REMOVE = 0xC;
+static const unsigned int TABLE_SIZE = 101; // nr primo
 typedef struct argparse_option ArgsOpts;
 typedef struct argparse Args;
+/*Globals*/
+int verbose = 0;
+
 int parseOperation(int insert, int remove, int search);
+
+void onNoneSelected();
+void onInsertSelected(const char *key);
+void onRemoveSelected(const char *key);
+void onSearchSelected(const char *key);
+
 int main(int argc, const char **argv)
 {
     int insert = 0;
     int remove = 0;
     int search = 0;
     int operation = 0;
-    int verbose = 0;
+
     const char *key = NULL;
     const char *idxFile = NULL;
     const char *storeFile = NULL;
@@ -46,13 +57,52 @@ int main(int argc, const char **argv)
 
     operation = parseOperation(insert, remove, search);
 
-    if (verbose)
+    switch (operation)
     {
-        printf("Iniciando operação nr: %d", operation);
+    case OP_INSERT:
+        onInsertSelected(key);
+        break;
+    case OP_REMOVE:
+        onRemoveSelected(key);
+        break;
+    case OP_SEARCH:
+        onSearchSelected(key);
+        break;
+    default:
+        onNoneSelected();
+        return ERR_NONE_SELECTED;
     }
-
     return 0;
 }
+void onInsertSelected(const char *key)
+{
+    if (verbose)
+    {
+        printf("Iniciando operação de inserção na chave [%s]\n", key);
+    }
+}
+void onRemoveSelected(const char *key)
+{
+    if (verbose)
+    {
+        printf("Iniciando operação de remoção da chave [%s]\n", key);
+    }
+}
+void onSearchSelected(const char *key)
+{
+    if (verbose)
+    {
+        printf("Iniciando operação de busca da chave [%s]\n", key);
+    }
+}
+void onNoneSelected()
+{
+    if (verbose)
+    {
+        printf("Nenhuma ou mais de uma opção selecionada\n");
+    }
+}
+
 int parseOperation(int insert, int remove, int search)
 {
     if (insert && !remove && !search)

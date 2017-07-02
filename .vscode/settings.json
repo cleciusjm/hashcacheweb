@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "hashtable.h": "c",
-        "md5.h": "c"
+        "md5.h": "c",
+        "argparse.h": "c"
     }
 }
