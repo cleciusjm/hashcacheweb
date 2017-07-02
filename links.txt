@@ -1,0 +1,3 @@
+http://google.com
+http://moodle.pg.utfpr.edu.br
+http://utfpr.edu.br
