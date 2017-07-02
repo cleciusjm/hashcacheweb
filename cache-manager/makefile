@@ -1,5 +1,5 @@
 # project name (generate executable with this name)
-TARGET = backgroundExtractor
+TARGET = cache-manager
 
 CC  = gcc
 # compiling flags here
@@ -22,7 +22,7 @@ rm = rm -rf
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(BINDIR)
-	@$(LINKER) $@ $(LFLAGS) $(OBJECTS)
+	@$(LINKER) $@ $(OBJECTS) $(LFLAGS)
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
