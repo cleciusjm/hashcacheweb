@@ -7,8 +7,11 @@
 #define OP_INSERT 0xA
 #define OP_SEARCH 0xB
 #define OP_REMOVE 0xC
+#define STAT_OK 0x0
 #define ERR_NONE_SELECTED 0x1
 #define ERR_MISS_PARAM 0x2
+#define ERR_FAIL_TO_EXECUTE 0x3
+#define ERR_NOT_FOUND 0x4
 #define TABLE_SIZE 101 // nr primo
 
 typedef struct argparse_option ArgsOpts;
@@ -24,17 +27,17 @@ int verbose = 0;
 HashTable *table;
 FILE *db;
 
-void onInsertSelected(const char *key);
-void onRemoveSelected(const char *key);
-void onSearchSelected(const char *key);
-void onNoneSelected();
+int onInsertSelected(const char *key);
+int onRemoveSelected(const char *key);
+int onSearchSelected(const char *key, const char *outDir);
+int onNoneSelected();
 
 void loadIndex(const char *indexPath);
 void storeIndex(const char *indexPath);
 void loadDb(const char *storePath);
 
 int parseOperation(int insert, int remove, int search);
-
+char *str2md5(const char *str);
 int main(int argc, const char **argv)
 {
     int insert = 0;
@@ -42,10 +45,10 @@ int main(int argc, const char **argv)
     int search = 0;
     int operation = 0;
 
-    const char *key = NULL;
+    char *key = NULL;
     const char *indexPath = NULL;
     const char *storePath = NULL;
-
+    const char *out = NULL;
     ArgsOpts options[] = {
         OPT_HELP(),
         OPT_GROUP("Opções básicas"),
@@ -56,6 +59,7 @@ int main(int argc, const char **argv)
         OPT_BOOLEAN('i', "insert", &insert, "Operação de inserção"),
         OPT_BOOLEAN('r', "remove", &remove, "Operação de remoção"),
         OPT_BOOLEAN('s', "search", &search, "Operação de busca"),
+        OPT_STRING('O', "out", &out, "Arquivo de saída para busca"),
         OPT_END(),
     };
     struct argparse argparse;
@@ -84,58 +88,100 @@ int main(int argc, const char **argv)
         printf("Parametro de arquivo de armazenamento é obrigatório, use -d ou --db\n");
         hasParams = 0;
     }
+
     if (!hasParams)
         return ERR_MISS_PARAM;
 
+    key = str2md5(key);
     loadIndex(indexPath);
     loadDb(storePath);
-
+    table->verbose = verbose;
+    if (out == NULL)
+    {
+        out = key;
+    }
+    int status = STAT_OK;
     switch (operation)
     {
     case OP_INSERT:
-        onInsertSelected(key);
+        status = onInsertSelected(key);
         break;
     case OP_REMOVE:
-        onRemoveSelected(key);
+        status = onRemoveSelected(key);
         break;
     case OP_SEARCH:
-        onSearchSelected(key);
+        status = onSearchSelected(key, out);
         break;
     default:
-        onNoneSelected();
-        return ERR_NONE_SELECTED;
+        status = onNoneSelected();
+        break;
     }
     storeIndex(indexPath);
-    return 0;
+    return status;
 }
 
-void onInsertSelected(const char *key)
+int onInsertSelected(const char *key)
 {
     if (verbose)
-    {
         printf("Iniciando operação de inserção na chave [%s]\n", key);
+
+    ValueEntry *entry = hTableInitEntry(key, 1L);
+    if (hTableInsert(table, entry))
+    {
+        if (verbose)
+            printf("Inserido com sucesso!\n");
+        return STAT_OK;
+    }
+    else
+    {
+        if (verbose)
+            printf("Falha ao inserir!\n");
+        return ERR_FAIL_TO_EXECUTE;
     }
 }
-void onRemoveSelected(const char *key)
+int onRemoveSelected(const char *key)
 {
     if (verbose)
-    {
         printf("Iniciando operação de remoção da chave [%s]\n", key);
+    if (hTableRemove(table, key))
+    {
+        if (verbose)
+            printf("Removido com sucesso!\n");
+        return STAT_OK;
+    }
+    else
+    {
+        if (verbose)
+            printf("Falha ao remover!\n");
+        return ERR_FAIL_TO_EXECUTE;
     }
 }
-void onSearchSelected(const char *key)
+
+int onSearchSelected(const char *key, const char *out)
 {
     if (verbose)
-    {
         printf("Iniciando operação de busca da chave [%s]\n", key);
+    ValueEntry *result = hTableSearch(table, key);
+    if (result == NULL)
+    {
+        if (verbose)
+            printf("Chave solicitada não existe na tabela\n");
+        return ERR_NOT_FOUND;
+    }
+    else
+    {
+        int toDefaultOut = strcmp(out, "-");
+        if (verbose)
+            printf("Chave encontrada, enviando resultado para [%s]\n", toDefaultOut ? "Saída Padrão" : out);
+        return STAT_OK;
     }
 }
-void onNoneSelected()
+
+int onNoneSelected()
 {
     if (verbose)
-    {
         printf("Nenhuma ou mais de uma opção selecionada\n");
-    }
+    return ERR_NONE_SELECTED;
 }
 
 int parseOperation(int insert, int remove, int search)

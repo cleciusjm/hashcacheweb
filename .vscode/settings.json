@@ -2,6 +2,9 @@
     "files.associations": {
         "hashtable.h": "c",
         "md5.h": "c",
-        "argparse.h": "c"
+        "argparse.h": "c",
+        "stdio2.h": "c",
+        "libio.h": "c",
+        "stddef.h": "c"
     }
 }

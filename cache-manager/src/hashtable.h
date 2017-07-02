@@ -1,18 +1,30 @@
 #include <stdio.h>
 
-typedef struct valueEntry
+typedef struct
 {
     char *key;
     int value;
 } ValueEntry;
 
-typedef struct hashTable
+typedef struct valueEntryNode ValueEntryNode;
+
+struct valueEntryNode
 {
-    ValueEntry *values;
-    int size;
+    ValueEntry *value;
+    ValueEntryNode *next;
+    ValueEntryNode *prev;
+};
+
+typedef struct
+{
+    ValueEntryNode **values;
+    int verbose;
+    int maxsize;
 } HashTable;
 
-HashTable *hTableInit(const int size);
+ValueEntry *hTableInitEntry(const char *key, const unsigned long value);
+
+HashTable *hTableInit(const unsigned long size);
 /**
     Busca o valor da chave solicitada
 
