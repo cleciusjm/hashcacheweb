@@ -33,6 +33,8 @@ ValueEntry *hTableSearch(HashTable *table, const char *key)
 int hTableInsert(HashTable *table, ValueEntry *value)
 {
     int hash = hashCode(value->key, table->maxsize);
+    if (table->verbose)
+        printf("Inserção de chave [%s] selecionada posição [%d]\n", value->key, hash);
 
     ValueEntryNode *node = table->values[hash];
 
@@ -42,13 +44,24 @@ int hTableInsert(HashTable *table, ValueEntry *value)
     }
     else
     {
-        while (node->next != NULL)
-            node = node->next;
-        node->next = hTableInitNodeEntry(value);
-        node->next->prev = node;
+        if (strcmp(node->value->key, value->key))
+        {
+            if (table->verbose)
+                printf("Chave já existe na tabela, ignorando inserção");
+            return 0;
+        }
+        else
+        {
+            if (table->verbose)
+                printf("Colisão do hash, inserindo na lista");
+            while (node->next != NULL)
+                node = node->next;
+            node->next = hTableInitNodeEntry(value);
+            node->next->prev = node;
+        }
     }
 
-    return 0;
+    return 1;
 }
 int hTableRemove(HashTable *table, const char *key)
 {
@@ -65,7 +78,7 @@ int hTableRemove(HashTable *table, const char *key)
             if (node->next != NULL)
                 node->next = node->prev;
             hTableReleaseNodeEntry(node);
-            return 0;
+            return 1;
         }
         else
         {
@@ -73,7 +86,7 @@ int hTableRemove(HashTable *table, const char *key)
         }
     }
 
-    return 1;
+    return 0;
 }
 
 void hTableSave(HashTable *table, const char *filename)
