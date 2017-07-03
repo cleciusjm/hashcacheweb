@@ -110,4 +110,7 @@ local.properties
 
 # End of https://www.gitignore.io/api/c,eclipse
 /pages/
-
+**/cache.db
+**/cache.idx
+cache.db
+cache.idx
