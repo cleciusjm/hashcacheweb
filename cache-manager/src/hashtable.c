@@ -22,6 +22,8 @@ HashTable *hTableInit(const unsigned long size)
     HashTable *v = malloc(sizeof(HashTable));
     v->values = malloc(sizeof(ValueEntryNode) * size);
     v->maxsize = size;
+    for (int i = 0; i < size; i++)
+        v->values[i] = NULL;
     return v;
 }
 
@@ -44,16 +46,19 @@ int hTableInsert(HashTable *table, ValueEntry *value)
     }
     else
     {
-        if (strcmp(node->value->key, value->key))
+        int compare = strcmp(node->value->key, value->key);
+        if (table->verbose)
+            printf("Colisão de código, comparando [%s] com [%s] resultando [%d]\n", node->value->key, value->key, compare);
+        if (compare == 0)
         {
             if (table->verbose)
-                printf("Chave já existe na tabela, ignorando inserção");
+                printf("Chave já existe na tabela, ignorando inserção\n");
             return 0;
         }
         else
         {
             if (table->verbose)
-                printf("Colisão do hash, inserindo na lista");
+                printf("Colisão do hash, inserindo na lista\n");
             while (node->next != NULL)
                 node = node->next;
             node->next = hTableInitNodeEntry(value);
@@ -88,8 +93,11 @@ int hTableRemove(HashTable *table, const char *key)
 
     return 0;
 }
-void hTableWriteEntry(ValueEntry *entry, FILE *file)
+void hTableWriteEntry(ValueEntry *entry, FILE *file, int verbose)
 {
+    if (verbose)
+        printf("Escrevendo [chave: %s | valor: %d]\n", entry->key, entry->value);
+
     int length = strlen(entry->key);
     fwrite(&length, sizeof(int), 1, file);
     fwrite((const void *)entry->key, sizeof(char), length, file);
@@ -103,14 +111,21 @@ void hTableSave(HashTable *table, const char *filename)
     FILE *file = fopen(filename, "w");
     if (file != NULL)
     {
-        fwrite(&(table->maxsize), sizeof(long), 1, file);
-        for (int i = 0; i < table->maxsize; i++)
+        if (table->verbose)
+            printf("Escrevendo tamanho [%d]\n", table->maxsize);
+
+        long size = table->maxsize;
+        fwrite(&size, sizeof(long), 1, file);
+
+        for (int i = 0; i < size; i++)
         {
             ValueEntryNode *node = table->values[i];
             while (node != NULL)
             {
+                if (table->verbose)
+                    printf("Avaliando posição %d para gravação\n", i);
                 ValueEntry *entry = node->value;
-                hTableWriteEntry(entry, file);
+                hTableWriteEntry(entry, file, table->verbose);
                 node = node->next;
             }
         }
@@ -145,7 +160,13 @@ HashTable *hTableLoad(const char *filename, const int verbose)
             int value = 0;
             fread(&value, sizeof(int), 1, file);
             ValueEntry *entry = hTableInitEntry(key, value);
-            hTableInsert(table, entry);
+
+            if (strlen(entry->key) > 0)
+            {
+                if (table->verbose)
+                    printf("Lido [chave: %s | valor: %d]\n", entry->key, entry->value);
+                hTableInsert(table, entry);
+            }
         }
         fclose(file);
         if (table->verbose)
