@@ -204,7 +204,7 @@ void loadIndex(const char *indexPath)
 {
     if (indexPath != NULL)
     {
-        table = hTableLoad(indexPath);
+        table = hTableLoad(indexPath, verbose);
     }
     if (table == NULL)
     {
@@ -213,6 +213,10 @@ void loadIndex(const char *indexPath)
 }
 void storeIndex(const char *indexPath)
 {
+    if (table != NULL)
+    {
+        hTableSave(table, indexPath);
+    }
 }
 void loadDb(const char *storePath)
 {

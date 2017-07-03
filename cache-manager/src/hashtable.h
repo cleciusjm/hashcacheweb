@@ -55,4 +55,4 @@ int hTableRemove(HashTable *table, const char *key);
 
 void hTableSave(HashTable *table, const char *filename);
 
-HashTable *hTableLoad(const char *filename);
+HashTable *hTableLoad(const char *filename, const int verbose);
