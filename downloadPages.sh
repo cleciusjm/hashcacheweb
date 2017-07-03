@@ -1,8 +1,8 @@
 #!/bin/bash
 
-pastaParaSites=pages
+downloadDir=pages
 
-arquivoIndices=links.txt
+indexFile=links.txt
 
 cacheManagerDir=cache-manager
 
@@ -11,16 +11,16 @@ cacheManagerBin=$cacheManagerDir/bin/cache-manager
 cacheDb=./cache.db
 cacheIndex=./cache.idx
 
-rm -rf $pastaParaSites;
+rm -rf $downloadDir;
 
-mkdir -p $pastaParaSites;
+mkdir -p $downloadDir;
 
 make -C $cacheManagerDir;
 
 while read p; do
   filename=$(printf '%s' $p | md5sum | cut -d ' ' -f 1)
   echo "Baixando: $p em $filename";
-  curl $p > "$pastaParaSites/$filename.html";
-  $cacheManagerBin -d $cacheDb -t $cacheIndex -i -k $p -I "$pastaParaSites/$filename.html"
+  curl $p > "$downloadDir/$filename.html";
+  $cacheManagerBin -d $cacheDb -t $cacheIndex -i -k $p -I "$downloadDir/$filename.html"
 
-done < $arquivoIndices
+done < $indexFile
