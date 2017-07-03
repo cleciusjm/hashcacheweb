@@ -146,6 +146,7 @@ int onInsertSelected(const char *key, const char *inputFile)
             printf("Falha ao ler o arquivo informado \n");
         return ERR_FAIL_TO_EXECUTE;
     }
+
     /*Inserção no hash*/
     ValueEntry *entry = hTableInitEntry(key, tarIndex);
     if (hTableInsert(table, entry))

@@ -3,7 +3,7 @@
 
 TarFile tarLoad(const char *filename)
 {
-    return fopen(filename, "w+");
+    return fopen(filename, "a+");
 }
 
 void tarRelease(TarFile file)
