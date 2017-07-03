@@ -58,5 +58,5 @@ int tarRead(TarFile file, int index, const char *outputFile)
 }
 int tarReadToStdOut(TarFile file, int index)
 {
-    return tarReadTo(file, index, stdin);
+    return tarReadTo(file, index, stdout);
 }
