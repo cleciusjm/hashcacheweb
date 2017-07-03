@@ -1,4 +1,5 @@
 #include "hashtable.h"
+#include "tarfile.h"
 #include "md5.h"
 #include "argparse.h"
 #include <stdio.h>
@@ -25,9 +26,9 @@ static const char *const usage[] = {
 /*Globals*/
 int verbose = 0;
 HashTable *table;
-FILE *db;
+TarFile db;
 
-int onInsertSelected(const char *key);
+int onInsertSelected(const char *key, const char *inputFile);
 int onRemoveSelected(const char *key);
 int onSearchSelected(const char *key, const char *outDir);
 int onNoneSelected();
@@ -49,6 +50,7 @@ int main(int argc, const char **argv)
     const char *indexPath = NULL;
     const char *storePath = NULL;
     char *out = NULL;
+    char *in = NULL;
     ArgsOpts options[] = {
         OPT_HELP(),
         OPT_GROUP("Opções básicas"),
@@ -59,6 +61,7 @@ int main(int argc, const char **argv)
         OPT_BOOLEAN('i', "insert", &insert, "Operação de inserção"),
         OPT_BOOLEAN('r', "remove", &remove, "Operação de remoção"),
         OPT_BOOLEAN('s', "search", &search, "Operação de busca"),
+        OPT_STRING('I', "in", &in, "Arquivo de entrada para inserção"),
         OPT_STRING('O', "out", &out, "Arquivo de saída para busca"),
         OPT_END(),
     };
@@ -99,15 +102,15 @@ int main(int argc, const char **argv)
     if (out == NULL)
     {
         char *extension = ".html";
-        out = malloc(sizeof(char)*(strlen(key))+strlen(extension));
-        strcpy(out,key);
-        strcat(out,extension);
+        out = malloc(sizeof(char) * (strlen(key)) + strlen(extension));
+        strcpy(out, key);
+        strcat(out, extension);
     }
     int status = STAT_OK;
     switch (operation)
     {
     case OP_INSERT:
-        status = onInsertSelected(key);
+        status = onInsertSelected(key, in);
         break;
     case OP_REMOVE:
         status = onRemoveSelected(key);
@@ -123,12 +126,28 @@ int main(int argc, const char **argv)
     return status;
 }
 
-int onInsertSelected(const char *key)
+int onInsertSelected(const char *key, const char *inputFile)
 {
     if (verbose)
-        printf("Iniciando operação de inserção na chave [%s]\n", key);
+        printf("Iniciando operação de inserção na chave [%s] do arquivo [%s]\n", key, inputFile);
 
-    ValueEntry *entry = hTableInitEntry(key, 1L);
+    /*Inserção do DB*/
+    int tarIndex = TAR_NO_INDEX;
+    if (inputFile == NULL)
+    {
+        if (verbose)
+            printf("Arquivo de entrada não informado, utilize a opção -I ou --in \n");
+        return ERR_MISS_PARAM;
+    }
+    tarIndex = tarWrite(db, inputFile);
+    if (tarIndex == TAR_NO_INDEX)
+    {
+        if (verbose)
+            printf("Falha ao ler o arquivo informado \n");
+        return ERR_FAIL_TO_EXECUTE;
+    }
+    /*Inserção no hash*/
+    ValueEntry *entry = hTableInitEntry(key, tarIndex);
     if (hTableInsert(table, entry))
     {
         if (verbose)
@@ -175,7 +194,12 @@ int onSearchSelected(const char *key, const char *out)
     {
         int toDefaultOut = strcmp(out, "-") == 0;
         if (verbose)
-            printf("Chave encontrada, enviando resultado para [%s]\n", toDefaultOut ? "Saída Padrão" : out);
+            printf("Chave encontrada, posição [%d], enviando resultado para [%s]\n", result->value, toDefaultOut ? "Saída Padrão" : out);
+
+        if (toDefaultOut)
+            tarReadToStdOut(db, result->value);
+        else
+            tarRead(db, result->value, out);
 
         return STAT_OK;
     }
@@ -224,6 +248,7 @@ void storeIndex(const char *indexPath)
 }
 void loadDb(const char *storePath)
 {
+    db = tarLoad(storePath);
 }
 char *str2md5(const char *str)
 {

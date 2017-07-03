@@ -8,6 +8,7 @@
         "stddef.h": "c",
         "string.h": "c",
         "stdio.h": "c",
-        "string2.h": "c"
+        "string2.h": "c",
+        "tarfile.h": "c"
     }
 }
