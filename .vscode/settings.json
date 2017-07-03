@@ -7,6 +7,7 @@
         "libio.h": "c",
         "stddef.h": "c",
         "string.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "string2.h": "c"
     }
 }

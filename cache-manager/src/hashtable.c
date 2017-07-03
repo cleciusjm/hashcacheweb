@@ -29,6 +29,25 @@ HashTable *hTableInit(const unsigned long size)
 
 ValueEntry *hTableSearch(HashTable *table, const char *key)
 {
+    int hash = hashCode(key, table->maxsize);
+
+    ValueEntryNode *node = table->values[hash];
+
+    while (node != NULL)
+    {
+        int compare = strcmp(node->value->key, key);
+        if (table->verbose)
+            printf("Hash encontrado na posição [%d], comparando [%s] com [%s] resultando em [%d]\n", hash, node->value->key, key, compare);
+        if (compare == 0)
+        {
+            return node->value;
+        }
+        else
+        {
+            node = node->next;
+        }
+    }
+
     return NULL;
 }
 
@@ -48,7 +67,7 @@ int hTableInsert(HashTable *table, ValueEntry *value)
     {
         int compare = strcmp(node->value->key, value->key);
         if (table->verbose)
-            printf("Colisão de código, comparando [%s] com [%s] resultando [%d]\n", node->value->key, value->key, compare);
+            printf("Colisão de código, comparando [%s] com [%s] resultando em [%d]\n", node->value->key, value->key, compare);
         if (compare == 0)
         {
             if (table->verbose)
@@ -76,13 +95,15 @@ int hTableRemove(HashTable *table, const char *key)
 
     while (node != NULL)
     {
-        if (strcmp(node->value->key, key))
+        int compare = strcmp(node->value->key, key);
+        if (compare == 0)
         {
             if (node->prev != NULL)
                 node->prev = node->next;
             if (node->next != NULL)
                 node->next = node->prev;
             hTableReleaseNodeEntry(node);
+            table->values[hash] = NULL;
             return 1;
         }
         else

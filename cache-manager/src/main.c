@@ -48,7 +48,7 @@ int main(int argc, const char **argv)
     char *key = NULL;
     const char *indexPath = NULL;
     const char *storePath = NULL;
-    const char *out = NULL;
+    char *out = NULL;
     ArgsOpts options[] = {
         OPT_HELP(),
         OPT_GROUP("Opções básicas"),
@@ -98,7 +98,10 @@ int main(int argc, const char **argv)
     table->verbose = verbose;
     if (out == NULL)
     {
-        out = key;
+        char *extension = ".html";
+        out = malloc(sizeof(char)*(strlen(key))+strlen(extension));
+        strcpy(out,key);
+        strcat(out,extension);
     }
     int status = STAT_OK;
     switch (operation)
@@ -170,9 +173,10 @@ int onSearchSelected(const char *key, const char *out)
     }
     else
     {
-        int toDefaultOut = strcmp(out, "-");
+        int toDefaultOut = strcmp(out, "-") == 0;
         if (verbose)
             printf("Chave encontrada, enviando resultado para [%s]\n", toDefaultOut ? "Saída Padrão" : out);
+
         return STAT_OK;
     }
 }
