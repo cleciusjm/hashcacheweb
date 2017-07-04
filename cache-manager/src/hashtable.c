@@ -211,7 +211,7 @@ int hashCode(const char *key, const long size)
     {
         value += key[i] - 65;
     }
-    return key[0] % size;
+    return value % size;
 }
 
 ValueEntryNode *hTableInitNodeEntry(ValueEntry *entry)
